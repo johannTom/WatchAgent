@@ -3,6 +3,7 @@ from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.config import DATABASE_URL
 from app.db.models import Base
@@ -19,10 +20,15 @@ def _ensure_sqlite_directory(database_url: str) -> None:
 
 _ensure_sqlite_directory(DATABASE_URL)
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
-)
+engine_kwargs: dict = {}
+connect_args: dict = {}
+
+if DATABASE_URL.startswith("sqlite"):
+    connect_args["check_same_thread"] = False
+    if DATABASE_URL.endswith(":memory:"):
+        engine_kwargs["poolclass"] = StaticPool
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args, **engine_kwargs)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
