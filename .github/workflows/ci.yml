@@ -22,5 +22,5 @@ jobs:
       - name: Run tests
         run: pytest -q
         env:
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: "sqlite:///:memory:"
           ENABLE_POLLER: "false"
