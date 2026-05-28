@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import CITIES, CURRENT_FIELDS, OPEN_METEO_URL, POLL_INTERVAL_SECONDS
 from app.db.repository import store_reading_if_new
 from app.db.session import SessionLocal
+from app.events import evaluate_reading
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ def poll_city(db: Session, client: httpx.Client, city_name: str, latitude: float
         reading = store_reading_if_new(db, **weather)
         if reading is None:
             return  # Open-Meteo timestamp unchanged since last poll
+        evaluate_reading(db, reading)
         logger.info("Stored reading for %s at %s", city_name, reading.observed_at.isoformat())
     except httpx.HTTPError as exc:
         logger.warning("Weather fetch failed for %s: %s", city_name, exc)
