@@ -27,6 +27,21 @@ A `condition_change` event fires only when the category changes between consecut
 - **precipitation_started** — hourly precipitation crosses from below 0.5 mm to at least 0.5 mm
 - **strong_wind** — wind crosses a city threshold (Vancouver 35 km/h, Ottawa/Toronto 45 km/h)
 
+## API
+
+| Endpoint | Query params | Description |
+|---|---|---|
+| `GET /health` | — | Service status and stored row counts |
+| `GET /readings` | `city`, `limit` | Latest weather readings (newest first) |
+| `GET /events` | `city`, `limit` | Latest notable events (newest first) |
+
+`city` is optional. `limit` defaults to 100 (max 500).
+
+```bash
+curl "http://localhost:8000/readings?city=Ottawa&limit=10"
+curl "http://localhost:8000/events?city=Toronto&limit=10"
+```
+
 ## Planned structure
 
 - `app/` application code
