@@ -14,6 +14,20 @@ def count_events(db: Session) -> int:
     return db.scalar(select(func.count()).select_from(Event)) or 0
 
 
+def list_readings(db: Session, *, city: str | None = None, limit: int = 100) -> list[Reading]:
+    query = select(Reading).order_by(Reading.observed_at.desc())
+    if city is not None:
+        query = query.where(Reading.city == city)
+    return list(db.scalars(query.limit(limit)))
+
+
+def list_events(db: Session, *, city: str | None = None, limit: int = 100) -> list[Event]:
+    query = select(Event).order_by(Event.observed_at.desc())
+    if city is not None:
+        query = query.where(Event.city == city)
+    return list(db.scalars(query.limit(limit)))
+
+
 def get_previous_reading(db: Session, city: str, before: datetime) -> Reading | None:
     return db.scalar(
         select(Reading)

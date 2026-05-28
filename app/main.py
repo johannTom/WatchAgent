@@ -2,11 +2,12 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Query
 from sqlalchemy.orm import Session
 
 from app.config import ENABLE_POLLER
-from app.db.repository import count_events, count_readings
+from app.db.models import Event, Reading
+from app.db.repository import count_events, count_readings, list_events, list_readings
 from app.db.session import get_db, init_db
 
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +36,30 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+def serialize_reading(reading: Reading) -> dict:
+    return {
+        "id": reading.id,
+        "city": reading.city,
+        "observed_at": reading.observed_at,
+        "temperature_2m": reading.temperature_2m,
+        "apparent_temperature": reading.apparent_temperature,
+        "precipitation": reading.precipitation,
+        "wind_speed_10m": reading.wind_speed_10m,
+        "weather_code": reading.weather_code,
+    }
+
+
+def serialize_event(event: Event) -> dict:
+    return {
+        "id": event.id,
+        "city": event.city,
+        "observed_at": event.observed_at,
+        "event_type": event.event_type,
+        "summary": event.summary,
+        "reason": event.reason,
+    }
+
+
 @app.get("/health")
 def health(db: Session = Depends(get_db)) -> dict:
     return {
@@ -42,3 +67,21 @@ def health(db: Session = Depends(get_db)) -> dict:
         "readings_stored": count_readings(db),
         "events_stored": count_events(db),
     }
+
+
+@app.get("/readings")
+def readings(
+    db: Session = Depends(get_db),
+    city: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> list[dict]:
+    return [serialize_reading(reading) for reading in list_readings(db, city=city, limit=limit)]
+
+
+@app.get("/events")
+def events(
+    db: Session = Depends(get_db),
+    city: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> list[dict]:
+    return [serialize_event(event) for event in list_events(db, city=city, limit=limit)]
