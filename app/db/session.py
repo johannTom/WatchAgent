@@ -24,8 +24,9 @@ engine_kwargs: dict = {}
 connect_args: dict = {}
 
 if DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False
+    connect_args["check_same_thread"] = False  # FastAPI runs sync routes in a thread pool
     if DATABASE_URL.endswith(":memory:"):
+        # Tests and API must share the same in-memory database
         engine_kwargs["poolclass"] = StaticPool
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args, **engine_kwargs)

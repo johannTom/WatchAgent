@@ -32,7 +32,7 @@ def store_reading_if_new(
         )
     )
     if existing is not None:
-        return None
+        return None  # already stored for this city + timestamp
 
     reading = Reading(
         city=city,

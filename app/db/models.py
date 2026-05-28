@@ -20,6 +20,7 @@ class Reading(Base):
     wind_speed_10m: Mapped[float] = mapped_column(Float)
     weather_code: Mapped[int] = mapped_column(Integer)
 
+    # One row per city + Open-Meteo timestamp (Section 01 dedup rule)
     __table_args__ = (
         UniqueConstraint("city", "observed_at", name="uq_reading_city_observed_at"),
     )
@@ -32,5 +33,5 @@ class Event(Base):
     city: Mapped[str] = mapped_column(String(64), index=True)
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     event_type: Mapped[str] = mapped_column(String(64), index=True)
-    summary: Mapped[str] = mapped_column(String(256))
-    reason: Mapped[str] = mapped_column(Text)
+    summary: Mapped[str] = mapped_column(String(256))  # what happened
+    reason: Mapped[str] = mapped_column(Text)  # why it was notable

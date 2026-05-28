@@ -1,6 +1,8 @@
 import os
 
+# Set before importing app modules so session.py picks up the test database
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("ENABLE_POLLER", "false")
 
 import pytest
 from fastapi.testclient import TestClient
