@@ -14,6 +14,15 @@ def count_events(db: Session) -> int:
     return db.scalar(select(func.count()).select_from(Event)) or 0
 
 
+def get_previous_reading(db: Session, city: str, before: datetime) -> Reading | None:
+    return db.scalar(
+        select(Reading)
+        .where(Reading.city == city, Reading.observed_at < before)
+        .order_by(Reading.observed_at.desc())
+        .limit(1)
+    )
+
+
 def store_reading_if_new(
     db: Session,
     *,
@@ -47,3 +56,25 @@ def store_reading_if_new(
     db.commit()
     db.refresh(reading)
     return reading
+
+
+def store_event(
+    db: Session,
+    *,
+    city: str,
+    observed_at: datetime,
+    event_type: str,
+    summary: str,
+    reason: str,
+) -> Event:
+    event = Event(
+        city=city,
+        observed_at=observed_at,
+        event_type=event_type,
+        summary=summary,
+        reason=reason,
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
