@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-28
+# What this file does: poller tests with a fake Open-Meteo response (no real network calls).
+
 import asyncio
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch

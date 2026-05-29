@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-27
+# What this file does: makes sure duplicate city+timestamp readings don't get stored twice.
+
 from datetime import datetime, timezone
 
 from app.db.repository import count_readings, store_reading_if_new

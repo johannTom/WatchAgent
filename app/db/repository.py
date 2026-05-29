@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-28
+# What this file does: all the database read/write helpers used by the API and poller.
+
 from datetime import datetime
 
 from sqlalchemy import func, select
@@ -14,14 +18,14 @@ def count_events(db: Session) -> int:
     return db.scalar(select(func.count()).select_from(Event)) or 0
 
 
-def list_readings(db: Session, *, city: str | None = None, limit: int = 100) -> list[Reading]:
+def list_readings(db: Session, *, city: str | None = None, limit: int = 50) -> list[Reading]:
     query = select(Reading).order_by(Reading.observed_at.desc())
     if city is not None:
         query = query.where(Reading.city == city)
     return list(db.scalars(query.limit(limit)))
 
 
-def list_events(db: Session, *, city: str | None = None, limit: int = 100) -> list[Event]:
+def list_events(db: Session, *, city: str | None = None, limit: int = 50) -> list[Event]:
     query = select(Event).order_by(Event.observed_at.desc())
     if city is not None:
         query = query.where(Event.city == city)
@@ -55,7 +59,7 @@ def store_reading_if_new(
         )
     )
     if existing is not None:
-        return None  # already stored for this city + timestamp
+        return None  # already have this city + timestamp
 
     reading = Reading(
         city=city,

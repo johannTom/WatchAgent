@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-28
+# What this file does: tests my event rules — temp shifts, wind, rain, WMO categories, etc.
+
 from datetime import datetime, timezone
 
 from app.db.models import Reading

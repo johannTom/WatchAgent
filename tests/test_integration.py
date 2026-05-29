@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-29
+# What this file does: checks that file-based sqlite still has data after reopening (like Docker ./data).
+
 from datetime import datetime, timezone
 from pathlib import Path
 

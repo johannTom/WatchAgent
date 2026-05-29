@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="920" viewBox="0 0 1280 920" role="img" aria-labelledby="title desc">
+  <title id="title">WatchAgent UML use case diagram</title>
+  <desc id="desc">Use case diagram for WatchAgent showing API client, developer, and Open-Meteo actors interacting with health, readings, events, polling, detection, and analysis use cases.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#25485f" />
+    </marker>
+    <style>
+      .bg { fill: #f7f4ee; }
+      .title { font: 700 30px "Segoe UI", Arial, sans-serif; fill: #1f2a33; }
+      .subtitle { font: 400 16px "Segoe UI", Arial, sans-serif; fill: #5b6870; }
+      .boundary { fill: none; stroke: #25485f; stroke-width: 2.5; }
+      .boundary-label { font: 700 20px "Segoe UI", Arial, sans-serif; fill: #1f2a33; }
+      .usecase { fill: #eef6f9; stroke: #25485f; stroke-width: 2; }
+      .usecase-text { font: 600 15px "Segoe UI", Arial, sans-serif; fill: #1f2a33; text-anchor: middle; }
+      .usecase-sub { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #44515a; text-anchor: middle; }
+      .actor-label { font: 600 15px "Segoe UI", Arial, sans-serif; fill: #1f2a33; text-anchor: middle; }
+      .actor-sub { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #44515a; text-anchor: middle; }
+      .assoc { stroke: #25485f; stroke-width: 2; fill: none; }
+      .include { stroke: #25485f; stroke-width: 2; fill: none; stroke-dasharray: 8 6; marker-end: url(#arrow); }
+      .note { fill: #fff8e8; stroke: #25485f; stroke-width: 1.5; rx: 10; }
+      .note-text { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #44515a; }
+      .rel-text { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #44515a; }
+      .stereotype { font: italic 12px "Segoe UI", Arial, sans-serif; fill: #5b6870; text-anchor: middle; }
+      .stick { stroke: #25485f; stroke-width: 2.5; fill: none; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="920" />
+  <text x="60" y="56" class="title">WatchAgent - Use Case Diagram</text>
+  <text x="60" y="86" class="subtitle">UML use case view of runtime API behaviour, background polling, and Cursor data analysis</text>
+
+  <!-- System boundary -->
+  <rect x="260" y="130" width="760" height="720" class="boundary" rx="20" />
+  <text x="640" y="168" class="boundary-label" text-anchor="middle">WatchAgent Weather Monitor</text>
+
+  <!-- Client-facing use cases (left column) -->
+  <ellipse cx="430" cy="260" rx="138" ry="58" class="usecase" />
+  <text x="430" y="252" class="usecase-text">Check service health</text>
+  <text x="430" y="278" class="usecase-sub">GET /health</text>
+
+  <ellipse cx="430" cy="430" rx="138" ry="58" class="usecase" />
+  <text x="430" y="422" class="usecase-text">Query weather readings</text>
+  <text x="430" y="448" class="usecase-sub">GET /readings</text>
+
+  <ellipse cx="430" cy="600" rx="138" ry="58" class="usecase" />
+  <text x="430" y="592" class="usecase-text">Query notable events</text>
+  <text x="430" y="618" class="usecase-sub">GET /events</text>
+
+  <!-- Background / developer use cases (right column) -->
+  <ellipse cx="820" cy="300" rx="148" ry="62" class="usecase" />
+  <text x="820" y="290" class="usecase-text">Collect weather readings</text>
+  <text x="820" y="318" class="usecase-sub">background poller</text>
+
+  <ellipse cx="820" cy="500" rx="148" ry="62" class="usecase" />
+  <text x="820" y="490" class="usecase-text">Detect notable events</text>
+  <text x="820" y="518" class="usecase-sub">change-based rules</text>
+
+  <ellipse cx="820" cy="720" rx="148" ry="62" class="usecase" />
+  <text x="820" y="710" class="usecase-text">Analyze stored data</text>
+  <text x="820" y="738" class="usecase-sub">Cursor data_analysis skill</text>
+
+  <!-- Actors -->
+  <circle cx="110" cy="430" r="20" class="stick" />
+  <line x1="110" y1="450" x2="110" y2="500" class="stick" />
+  <line x1="82" y1="478" x2="138" y2="478" class="stick" />
+  <line x1="110" y1="500" x2="86" y2="542" class="stick" />
+  <line x1="110" y1="500" x2="134" y2="542" class="stick" />
+  <text x="110" y="575" class="actor-label">API Client</text>
+  <text x="110" y="598" class="actor-sub">Reviewer / curl</text>
+
+  <circle cx="1140" cy="720" r="20" class="stick" />
+  <line x1="1140" y1="740" x2="1140" y2="790" class="stick" />
+  <line x1="1112" y1="768" x2="1168" y2="768" class="stick" />
+  <line x1="1140" y1="790" x2="1116" y2="832" class="stick" />
+  <line x1="1140" y1="790" x2="1164" y2="832" class="stick" />
+  <text x="1140" y="860" class="actor-label">Developer</text>
+
+  <circle cx="1140" cy="300" r="20" class="stick" />
+  <line x1="1140" y1="320" x2="1140" y2="370" class="stick" />
+  <line x1="1112" y1="348" x2="1168" y2="348" class="stick" />
+  <line x1="1140" y1="370" x2="1116" y2="412" class="stick" />
+  <line x1="1140" y1="370" x2="1164" y2="412" class="stick" />
+  <text x="1140" y="440" class="actor-label">Open-Meteo API</text>
+  <text x="1140" y="462" class="stereotype">&lt;&lt;external&gt;&gt;</text>
+
+  <!-- Associations -->
+  <path d="M 150 400 L 292 260" class="assoc" />
+  <path d="M 150 430 L 292 430" class="assoc" />
+  <path d="M 150 460 L 292 600" class="assoc" />
+  <path d="M 968 720 L 1118 720" class="assoc" />
+  <path d="M 968 300 L 1118 300" class="assoc" />
+  <path d="M 820 362 L 820 438" class="include" />
+  <text x="848" y="405" class="rel-text">&lt;&lt;include&gt;&gt;</text>
+
+  <!-- Notes (moved outside crowded areas) -->
+  <rect x="520" y="760" width="210" height="110" class="note" />
+  <text x="536" y="788" class="note-text">Polls Ottawa, Toronto,</text>
+  <text x="536" y="812" class="note-text">Vancouver every 300s.</text>
+  <text x="536" y="836" class="note-text">Dedupes by city +</text>
+  <text x="536" y="860" class="note-text">observed_at timestamp.</text>
+
+  <rect x="980" y="540" width="190" height="130" class="note" />
+  <text x="996" y="568" class="note-text">Event types:</text>
+  <text x="996" y="592" class="note-text">temperature_shift</text>
+  <text x="996" y="616" class="note-text">precipitation_started</text>
+  <text x="996" y="640" class="note-text">strong_wind</text>
+  <text x="996" y="664" class="note-text">condition_change</text>
+</svg>

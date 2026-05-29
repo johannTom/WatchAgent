@@ -1,0 +1,60 @@
+@startuml watchagent-use-case-diagram
+' WatchAgent — UML use case diagram
+' Render: plantuml docs/use-case-diagram.puml
+' Or paste into https://www.plantuml.com/plantuml
+
+left to right direction
+skinparam shadowing false
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #eef6f9
+  BorderColor #25485f
+  FontName "Segoe UI"
+}
+skinparam rectangle {
+  BorderColor #25485f
+  FontName "Segoe UI"
+}
+skinparam actor {
+  BorderColor #25485f
+  FontName "Segoe UI"
+}
+
+title WatchAgent — Use Case Diagram
+
+actor "API Client\n(Reviewer / curl)" as Client
+actor "Developer" as Developer
+actor "Open-Meteo API" as OpenMeteo <<external>>
+
+rectangle "WatchAgent Weather Monitor" {
+  usecase "Check service health\nGET /health" as UC_Health
+  usecase "Query weather readings\nGET /readings" as UC_Readings
+  usecase "Query notable events\nGET /events" as UC_Events
+  usecase "Collect weather readings\n(background poller)" as UC_Poll
+  usecase "Detect notable events\n(change-based rules)" as UC_Detect
+  usecase "Analyze stored data\n(Cursor data_analysis skill)" as UC_Analyze
+}
+
+Client --> UC_Health
+Client --> UC_Readings
+Client --> UC_Events
+
+Developer --> UC_Analyze
+
+UC_Poll ..> OpenMeteo : fetch current\nconditions
+UC_Poll ..> UC_Detect : <<include>>
+
+note right of UC_Detect
+  temperature_shift
+  precipitation_started
+  strong_wind
+  condition_change
+end note
+
+note bottom of UC_Poll
+  Polls Ottawa, Toronto, Vancouver
+  every POLL_INTERVAL_SECONDS (default 300s)
+  Dedupes by (city, observed_at)
+end note
+
+@enduml

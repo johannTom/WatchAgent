@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-28
+# What this file does: starts FastAPI, runs the poller in the background, and serves /health, /readings, /events.
+
 import asyncio
 import logging
 from contextlib import asynccontextmanager
@@ -21,7 +25,7 @@ async def lifespan(app: FastAPI):
     if ENABLE_POLLER:
         from app.poller import poller_loop
 
-        poller_task = asyncio.create_task(poller_loop())  # Section 05: start on app boot
+        poller_task = asyncio.create_task(poller_loop())
     try:
         yield
     finally:
@@ -73,15 +77,21 @@ def health(db: Session = Depends(get_db)) -> dict:
 def readings(
     db: Session = Depends(get_db),
     city: str | None = None,
-    limit: int = Query(default=100, ge=1, le=500),
-) -> list[dict]:
-    return [serialize_reading(reading) for reading in list_readings(db, city=city, limit=limit)]
+    limit: int = Query(default=50, ge=1, le=500),
+) -> dict:
+    return {
+        "readings": [
+            serialize_reading(reading) for reading in list_readings(db, city=city, limit=limit)
+        ]
+    }
 
 
 @app.get("/events")
 def events(
     db: Session = Depends(get_db),
     city: str | None = None,
-    limit: int = Query(default=100, ge=1, le=500),
-) -> list[dict]:
-    return [serialize_event(event) for event in list_events(db, city=city, limit=limit)]
+    limit: int = Query(default=50, ge=1, le=500),
+) -> dict:
+    return {
+        "events": [serialize_event(event) for event in list_events(db, city=city, limit=limit)]
+    }

@@ -1,8 +1,12 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-27
+# What this file does: pytest setup — fresh in-memory db for each test and a TestClient for the API.
+
 import os
 
-# Set before importing app modules so session.py picks up the test database
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
-os.environ.setdefault("ENABLE_POLLER", "false")
+# Set this before importing the app so tests never touch my real weather.db file
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["ENABLE_POLLER"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient

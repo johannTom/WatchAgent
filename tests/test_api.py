@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-28
+# What this file does: tests /readings and /events return the right JSON shape.
+
 from datetime import datetime, timezone
 
 from app.db.models import Event, Reading
@@ -44,7 +48,7 @@ def test_readings_empty(client):
     response = client.get("/readings")
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {"readings": []}
 
 
 def test_readings_response_shape(client, db):
@@ -55,8 +59,9 @@ def test_readings_response_shape(client, db):
     data = response.json()
 
     assert response.status_code == 200
-    assert len(data) == 1
-    assert set(data[0].keys()) == {
+    assert set(data.keys()) == {"readings"}
+    assert len(data["readings"]) == 1
+    assert set(data["readings"][0].keys()) == {
         "id",
         "city",
         "observed_at",
@@ -66,11 +71,11 @@ def test_readings_response_shape(client, db):
         "wind_speed_10m",
         "weather_code",
     }
-    assert data[0]["id"] == reading.id
-    assert data[0]["city"] == "Ottawa"
-    assert parse_observed_at(data[0]["observed_at"]) == observed_at
-    assert data[0]["temperature_2m"] == 18.0
-    assert data[0]["weather_code"] == 3
+    assert data["readings"][0]["id"] == reading.id
+    assert data["readings"][0]["city"] == "Ottawa"
+    assert parse_observed_at(data["readings"][0]["observed_at"]) == observed_at
+    assert data["readings"][0]["temperature_2m"] == 18.0
+    assert data["readings"][0]["weather_code"] == 3
 
 
 def test_readings_city_filter(client, db):
@@ -79,10 +84,11 @@ def test_readings_city_filter(client, db):
     add_reading(db, city="Toronto", observed_at=observed_at)
 
     response = client.get("/readings?city=Ottawa")
+    data = response.json()
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["city"] == "Ottawa"
+    assert len(data["readings"]) == 1
+    assert data["readings"][0]["city"] == "Ottawa"
 
 
 def test_readings_limit(client, db):
@@ -97,7 +103,7 @@ def test_readings_limit(client, db):
     response = client.get("/readings?city=Ottawa&limit=2")
 
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    assert len(response.json()["readings"]) == 2
 
 
 def test_readings_order_newest_first(client, db):
@@ -109,7 +115,9 @@ def test_readings_order_newest_first(client, db):
     response = client.get("/readings?city=Ottawa")
 
     assert response.status_code == 200
-    observed_times = [parse_observed_at(item["observed_at"]) for item in response.json()]
+    observed_times = [
+        parse_observed_at(item["observed_at"]) for item in response.json()["readings"]
+    ]
     assert observed_times == [later, earlier]
 
 
@@ -117,7 +125,7 @@ def test_events_empty(client):
     response = client.get("/events")
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {"events": []}
 
 
 def test_events_response_shape(client, db):
@@ -128,8 +136,9 @@ def test_events_response_shape(client, db):
     data = response.json()
 
     assert response.status_code == 200
-    assert len(data) == 1
-    assert set(data[0].keys()) == {
+    assert set(data.keys()) == {"events"}
+    assert len(data["events"]) == 1
+    assert set(data["events"][0].keys()) == {
         "id",
         "city",
         "observed_at",
@@ -137,12 +146,12 @@ def test_events_response_shape(client, db):
         "summary",
         "reason",
     }
-    assert data[0]["id"] == event.id
-    assert data[0]["city"] == "Toronto"
-    assert parse_observed_at(data[0]["observed_at"]) == observed_at
-    assert data[0]["event_type"] == "temperature_shift"
-    assert data[0]["summary"] == "Temperature rose 3.5°C"
-    assert data[0]["reason"] == "Exceeded threshold"
+    assert data["events"][0]["id"] == event.id
+    assert data["events"][0]["city"] == "Toronto"
+    assert parse_observed_at(data["events"][0]["observed_at"]) == observed_at
+    assert data["events"][0]["event_type"] == "temperature_shift"
+    assert data["events"][0]["summary"] == "Temperature rose 3.5°C"
+    assert data["events"][0]["reason"] == "Exceeded threshold"
 
 
 def test_events_city_filter(client, db):
@@ -151,10 +160,11 @@ def test_events_city_filter(client, db):
     add_event(db, city="Vancouver", observed_at=observed_at)
 
     response = client.get("/events?city=Toronto")
+    data = response.json()
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["city"] == "Toronto"
+    assert len(data["events"]) == 1
+    assert data["events"][0]["city"] == "Toronto"
 
 
 def test_events_limit(client, db):
@@ -169,7 +179,7 @@ def test_events_limit(client, db):
     response = client.get("/events?city=Toronto&limit=1")
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()["events"]) == 1
 
 
 def test_events_order_newest_first(client, db):
@@ -181,5 +191,7 @@ def test_events_order_newest_first(client, db):
     response = client.get("/events?city=Toronto")
 
     assert response.status_code == 200
-    observed_times = [parse_observed_at(item["observed_at"]) for item in response.json()]
+    observed_times = [
+        parse_observed_at(item["observed_at"]) for item in response.json()["events"]
+    ]
     assert observed_times == [later, earlier]

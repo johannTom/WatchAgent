@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-27
+# What this file does: checks /health returns the right shape and counts.
+
 from datetime import datetime, timezone
 
 from app.db.models import Event, Reading

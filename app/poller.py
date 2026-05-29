@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-28
+# What this file does: pulls weather from Open-Meteo every few minutes and saves new readings.
+
 import asyncio
 import logging
 from datetime import datetime, timezone
@@ -15,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def _to_utc(time_value: str, timezone_name: str) -> datetime:
-    # timezone=auto returns local time without an offset in the JSON
+    # Open-Meteo gives local time without a +00:00 style offset when timezone=auto
     observed_at = datetime.fromisoformat(time_value)
     if observed_at.tzinfo is None:
         observed_at = observed_at.replace(tzinfo=ZoneInfo(timezone_name))
@@ -53,14 +57,14 @@ def poll_city(db: Session, client: httpx.Client, city_name: str, latitude: float
         weather = fetch_current_weather(client, city_name, latitude, longitude)
         reading = store_reading_if_new(db, **weather)
         if reading is None:
-            return  # Open-Meteo timestamp unchanged since last poll
+            return  # same timestamp as last time — nothing new to store
         evaluate_reading(db, reading)
         logger.info("Stored reading for %s at %s", city_name, reading.observed_at.isoformat())
     except httpx.HTTPError as exc:
         logger.warning("Weather fetch failed for %s: %s", city_name, exc)
     except Exception:
         db.rollback()
-        logger.exception("Poll failed for %s", city_name)  # keep the loop running
+        logger.exception("Poll failed for %s", city_name)
 
 
 def poll_all_cities() -> None:
@@ -79,5 +83,5 @@ async def poller_loop() -> None:
         try:
             await asyncio.to_thread(poll_all_cities)
         except Exception:
-            logger.exception("Poll cycle failed")  # never exit on unexpected errors
+            logger.exception("Poll cycle failed")
         await asyncio.sleep(POLL_INTERVAL_SECONDS)

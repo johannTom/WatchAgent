@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="980" viewBox="0 0 1280 980" role="img" aria-labelledby="title desc">
   <title id="title">WatchAgent architecture diagram</title>
-  <desc id="desc">Architecture diagram showing Open-Meteo feeding a weather poller, which writes readings to SQLite and sends readings to event detection. Event detection stores notable events in SQLite. A client calls FastAPI, which queries SQLite and returns JSON responses. The client does not access the database directly.</desc>
+  <desc id="desc">Architecture diagram showing the runtime weather monitor (Open-Meteo, poller, event detection, SQLite, FastAPI) and the separate Cursor AI Assistant (.cursor rules, agents, data analysis skill) that reads stored data for development and analysis.</desc>
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#25485f" />
@@ -8,7 +8,8 @@
     <style>
       .bg { fill: #f7f4ee; }
       .title { font: 700 30px "Segoe UI", Arial, sans-serif; fill: #1f2a33; }
-      .subtitle { font: 400 16px "Segoe UI", Arial, sans-serif; fill: #5b6870; }
+      .subtitle { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #5b6870; }
+      .section-label { font: 700 17px "Segoe UI", Arial, sans-serif; fill: #1f2a33; }
       .label { font: 700 20px "Segoe UI", Arial, sans-serif; fill: #1f2a33; }
       .body { font: 400 14px "Segoe UI", Arial, sans-serif; fill: #44515a; }
       .small { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #44515a; }
@@ -18,15 +19,21 @@
       .storage { fill: #f3efe7; }
       .api { fill: #e9f4ee; }
       .actor { fill: #f8ecec; }
+      .ai { fill: #f0eef9; }
+      .zone { fill: none; stroke: #25485f; stroke-width: 2; stroke-dasharray: 12 8; rx: 18; }
       .arrow { stroke: #25485f; stroke-width: 3.5; fill: none; marker-end: url(#arrow); }
-      .dashed { stroke-dasharray: 10 8; }
+      .dashed { stroke: #25485f; stroke-width: 3; fill: none; stroke-dasharray: 10 8; marker-end: url(#arrow); }
     </style>
   </defs>
 
-  <rect class="bg" width="1200" height="760" />
+  <rect class="bg" width="1280" height="980" />
 
-  <text x="70" y="70" class="title">WatchAgent Architecture</text>
-  <text x="70" y="100" class="subtitle">Weather data is fetched, filtered into notable events, stored in SQLite, and exposed through a FastAPI service.</text>
+  <text x="70" y="60" class="title">WatchAgent Architecture</text>
+  <text x="70" y="88" class="subtitle">Runtime weather monitor (top) and Cursor AI Assistant (bottom) - separate tracks sharing the same SQLite data store</text>
+
+  <!-- Runtime zone -->
+  <rect x="60" y="110" width="1160" height="560" class="zone" />
+  <text x="80" y="140" class="section-label">Runtime (Docker / uvicorn)</text>
 
   <rect x="90" y="180" width="250" height="120" class="box external" />
   <text x="125" y="230" class="label">Open-Meteo API</text>
@@ -38,38 +45,73 @@
   <text x="468" y="258" class="body">Fetches Ottawa, Toronto, Vancouver</text>
   <text x="468" y="280" class="body">Skips duplicate timestamps per city</text>
 
-  <rect x="430" y="390" width="290" height="120" class="box process" />
-  <text x="460" y="440" class="label">Event Detection Logic</text>
-  <text x="460" y="468" class="body">Evaluates weather changes and thresholds</text>
-  <text x="460" y="490" class="body">Decides whether an event is notable</text>
+  <rect x="430" y="360" width="290" height="120" class="box process" />
+  <text x="460" y="410" class="label">Event Detection Logic</text>
+  <text x="460" y="438" class="body">Evaluates weather changes and thresholds</text>
+  <text x="460" y="460" class="body">Decides whether an event is notable</text>
 
-  <rect x="830" y="280" width="280" height="170" class="box storage" />
-  <text x="930" y="330" text-anchor="middle" class="label">SQLite Database</text>
-  <text x="890" y="365" class="body">Stores readings</text>
-  <text x="890" y="392" class="body">Stores notable events</text>
-  <text x="890" y="419" class="body">Supports query endpoints</text>
+  <rect x="830" y="250" width="280" height="170" class="box storage" />
+  <text x="930" y="300" text-anchor="middle" class="label">SQLite Database</text>
+  <text x="890" y="335" class="body">Stores readings</text>
+  <text x="890" y="362" class="body">Stores notable events</text>
+  <text x="890" y="389" class="body">Shared by runtime and AI skill</text>
 
-  <rect x="430" y="600" width="290" height="110" class="box api" />
-  <text x="525" y="646" class="label">FastAPI Service</text>
-  <text x="485" y="674" class="body">/health  /readings  /events</text>
+  <rect x="430" y="540" width="290" height="110" class="box api" />
+  <text x="525" y="586" class="label">FastAPI Service</text>
+  <text x="485" y="614" class="body">/health  /readings  /events</text>
 
-  <rect x="860" y="600" width="240" height="110" class="box actor" />
-  <text x="930" y="646" class="label">Client / Reviewer</text>
-  <text x="907" y="674" class="body">Calls the HTTP API</text>
+  <rect x="860" y="540" width="240" height="110" class="box actor" />
+  <text x="930" y="586" class="label">Client / Reviewer</text>
+  <text x="907" y="614" class="body">Calls the HTTP API</text>
 
+  <!-- Runtime arrows -->
   <path d="M 340 240 L 430 240" class="arrow" />
-  <path d="M 575 300 L 575 390" class="arrow" />
-  <path d="M 720 240 L 830 320" class="arrow" />
-  <path d="M 720 450 L 830 410" class="arrow" />
-  <path d="M 690 600 L 770 520 L 920 520 L 920 450" class="arrow dashed" />
-  <path d="M 860 662 L 720 662" class="arrow" />
-  <path d="M 720 628 L 860 628" class="arrow" />
+  <path d="M 575 300 L 575 360" class="arrow" />
+  <path d="M 720 240 L 830 310" class="arrow" />
+  <path d="M 720 420 L 830 380" class="arrow" />
+  <path d="M 690 540 L 770 460 L 920 460 L 920 420" class="arrow dashed" />
+  <path d="M 860 598 L 720 598" class="arrow" />
+  <path d="M 720 564 L 860 564" class="arrow" />
 
   <text x="355" y="220" class="small">poll current data</text>
-  <text x="592" y="350" class="small">evaluate readings</text>
+  <text x="592" y="335" class="small">evaluate readings</text>
   <text x="738" y="265" class="small">store readings</text>
-  <text x="738" y="438" class="small">store events</text>
-  <text x="760" y="505" class="small">query stored data</text>
-  <text x="742" y="612" class="small">request endpoints</text>
-  <text x="748" y="690" class="small">JSON responses</text>
+  <text x="738" y="408" class="small">store events</text>
+  <text x="760" y="445" class="small">query stored data</text>
+  <text x="742" y="552" class="small">request endpoints</text>
+  <text x="748" y="630" class="small">JSON responses</text>
+
+  <!-- AI Assistant zone -->
+  <rect x="60" y="710" width="1160" height="230" class="zone" />
+  <text x="80" y="740" class="section-label">AI Assistant (Cursor IDE - not part of runtime container)</text>
+
+  <rect x="120" y="780" width="220" height="110" class="box actor" />
+  <text x="230" y="822" text-anchor="middle" class="label">Developer</text>
+  <text x="230" y="850" text-anchor="middle" class="body">Works in Cursor IDE</text>
+  <text x="230" y="872" text-anchor="middle" class="body">during development</text>
+
+  <rect x="400" y="760" width="420" height="150" class="box ai" />
+  <text x="430" y="792" class="label">.cursor/ AI Assistant</text>
+  <text x="430" y="820" class="body">Rules - project conventions, event design, poller resilience</text>
+  <text x="430" y="846" class="body">Agents - event-reviewer, api-storage-reviewer</text>
+  <text x="430" y="872" class="body">Skill - data_analysis/analyze.py (executable CLI)</text>
+
+  <rect x="900" y="780" width="280" height="110" class="box ai" />
+  <text x="1040" y="822" text-anchor="middle" class="label">Data Analysis Skill</text>
+  <text x="1040" y="850" text-anchor="middle" class="body">Summaries, trends, event breakdowns</text>
+  <text x="1040" y="872" text-anchor="middle" class="body">Outputs JSON from stored data</text>
+
+  <!-- AI arrows -->
+  <path d="M 340 835 L 400 835" class="arrow" />
+  <text x="345" y="820" class="small">configure / invoke</text>
+
+  <path d="M 820 835 L 900 835" class="arrow" />
+  <text x="835" y="820" class="small">runs analyze.py</text>
+
+  <path d="M 1040 780 L 1040 420 L 970 420" class="dashed" />
+  <text x="1055" y="600" class="small">read-only queries</text>
+  <text x="1055" y="620" class="small">(DATABASE_URL)</text>
+
+  <!-- Legend note -->
+  <text x="70" y="960" class="small">Solid arrows = runtime data flow. Dashed arrows = read/query paths that do not write to the database.</text>
 </svg>

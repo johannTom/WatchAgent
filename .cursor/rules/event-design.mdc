@@ -1,3 +1,46 @@
-# Event Design
+---
+description: Notable event detection rules and WMO category grouping
+globs: app/events.py,tests/test_event_detection.py
+alwaysApply: false
+---
 
-This file is a placeholder for notable-event design rules.
+# Event detection design
+
+Events are **change-based**, not fixed absolute thresholds like "temperature > 30°C".
+
+## Required event fields
+
+Every stored event must answer: **what** (`summary`), **where** (`city`), **when** (`observed_at`), **why** (`reason`), plus `event_type`.
+
+## First reading for a city
+
+No events — there is no previous reading to compare. `detect_events(reading, None)` must return `[]`.
+
+## Current rule types
+
+| event_type | Fires when |
+|---|---|
+| `temperature_shift` | \|Δtemp\| ≥ 3°C vs previous reading |
+| `precipitation_started` | previous `< 0.5` mm and current ≥ 0.5 mm |
+| `strong_wind` | wind crosses city threshold (Vancouver 35, others 45 km/h) |
+| `condition_change` | WMO **category** changes (not raw code alone) |
+
+## WMO categories
+
+Group codes before comparing: `clear`, `cloudy`, `fog`, `drizzle/rain`, `snow`, `thunderstorm`, `other`. Codes within the same group must **not** create `condition_change`.
+
+## Adding or changing rules
+
+1. Update `detect_events()` in `app/events.py`.
+2. Add a unit test with explicit previous/current `Reading` objects — no live API.
+3. Document the reasoning in README under Event detection.
+
+```python
+# ❌ BAD — shallow, not change-based
+if reading.temperature_2m > 30:
+    ...
+
+# ✅ GOOD — compares to previous reading for same city
+if abs(reading.temperature_2m - previous.temperature_2m) >= TEMP_SHIFT_C:
+    ...
+```

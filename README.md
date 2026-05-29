@@ -1,10 +1,97 @@
 # WatchAgent: Weather Monitor & AI Assistant
 
-Starter scaffold for the Nokia take-home project.
+Nokia take-home — weather monitor backend plus Cursor AI Assistant setup.
+
+Polls Ottawa, Toronto, and Vancouver via Open-Meteo, stores readings in SQLite, detects notable events, and exposes `/health`, `/readings`, and `/events`. The `.cursor/` folder holds rules, agents, and a data-analysis skill for the AI Assistant section.
+
+## Overview
+
+Single FastAPI process with a background poller:
+
+1. **Poll** — fetch current conditions from Open-Meteo every 300s (configurable) for all three cities
+2. **Store** — insert readings once; skip duplicates by `(city, observed_at)`
+3. **Detect** — compare each new reading to the previous one for that city; store events with what / where / when / why
+4. **Serve** — API reads from SQLite only; clients do not access the database directly
+
+No frontend required.
+
+## Architecture
+
+![WatchAgent architecture](docs/architecture-diagram.svg)
+
+The diagram has two zones:
+
+- **Runtime (top)** — Open-Meteo → poller → SQLite ← event detection; FastAPI queries SQLite; client calls the API
+- **AI Assistant (bottom)** — `.cursor/` rules, agents, and `analyze.py`; read-only access to SQLite; not started by Docker
+
+| Component | Role |
+|---|---|
+| **Open-Meteo** | External weather API (no key) |
+| **Poller** | Fetch → dedupe → persist → event detection |
+| **SQLite** | Readings and events; `./data/` volume in Docker |
+| **Event detection** | Change-based rules on consecutive readings per city |
+| **FastAPI** | `/health`, `/readings`, `/events`; poller on app lifespan |
+| **`.cursor/`** | Cursor rules, agents, data analysis skill |
+
+Also in `docs/`: [use-case-diagram.svg](docs/use-case-diagram.svg), [class-diagram.svg](docs/class-diagram.svg) (PlantUML sources: `.puml`).
+
+## Technology choices
+
+| Choice | Why |
+|---|---|
+| **Python 3.11** | Assignment stack; used in Dockerfile |
+| **FastAPI + Uvicorn** | REST API and OpenAPI docs |
+| **SQLAlchemy 2** | ORM for readings/events |
+| **SQLite** | Single-file DB; Docker volume mount |
+| **httpx** | Open-Meteo HTTP client in poller |
+| **pytest** | 36 tests (dedup, events, API, integration) |
+| **Docker Compose** | One-command run for reviewers |
+
+Open-Meteo: free, no credentials, provides temperature, precipitation, wind, and WMO weather code.
+
+## Run with Docker
+
+Requirements: Docker and Git.
+
+```bash
+git clone https://github.com/johannTom/WatchAgent.git
+cd WatchAgent
+cp .env.example .env
+docker compose up --build
+```
+
+API: `http://localhost:8000`. Poller starts automatically. SQLite persists in `./data/` on the host.
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `sqlite:///./data/weather.db` | SQLite database path |
+| `POLL_INTERVAL_SECONDS` | `300` | Seconds between poll cycles |
+| `ENABLE_POLLER` | `true` | Start background poller on boot |
+
+## API
+
+| Endpoint | Query params | Description |
+|---|---|---|
+| `GET /health` | — | Service status and stored row counts |
+| `GET /readings` | `city`, `limit` | `{ "readings": [ ... ] }` newest first |
+| `GET /events` | `city`, `limit` | `{ "events": [ ... ] }` newest first |
+
+`city` optional. `limit` defaults to 50 (max 500).
+
+```bash
+curl "http://localhost:8000/readings?city=Ottawa&limit=10"
+curl "http://localhost:8000/events?city=Toronto&limit=10"
+```
+
+Interactive docs: `http://localhost:8000/docs`
 
 ## Event detection
 
-Notable events compare each new reading to the previous one for the same city. Fixed thresholds like "temperature > 30°C" are avoided in favour of change-based, city-aware rules.
+Events compare each new reading to the previous one for the same city. Fixed thresholds (e.g. temperature > 30°C) are avoided in favour of change-based, city-aware rules.
+
+Each event includes **what** (`summary`), **where** (`city`), **when** (`observed_at`), and **why** (`reason`).
 
 ### Condition categories
 
@@ -19,49 +106,16 @@ WMO weather codes are grouped so minor code changes within the same group do not
 | snow | 71–77, 85–86 |
 | thunderstorm | 95–99 |
 
-A `condition_change` event fires only when the category changes between consecutive readings (for example cloudy → drizzle/rain).
+`condition_change` fires only when the category changes between consecutive readings.
 
-### Other rules
+### Rules
 
 - **temperature_shift** — change of at least 3°C since the previous reading
-- **precipitation_started** — hourly precipitation crosses from below 0.5 mm to at least 0.5 mm
-- **strong_wind** — wind crosses a city threshold (Vancouver 35 km/h, Ottawa/Toronto 45 km/h)
+- **precipitation_started** — precipitation crosses from below 0.5 mm to at least 0.5 mm
+- **strong_wind** — wind crosses city threshold (Vancouver 35 km/h; Ottawa/Toronto 45 km/h)
+- **condition_change** — WMO category boundary crossed
 
-## API
-
-| Endpoint | Query params | Description |
-|---|---|---|
-| `GET /health` | — | Service status and stored row counts |
-| `GET /readings` | `city`, `limit` | Latest weather readings (newest first) |
-| `GET /events` | `city`, `limit` | Latest notable events (newest first) |
-
-`city` is optional. `limit` defaults to 100 (max 500).
-
-```bash
-curl "http://localhost:8000/readings?city=Ottawa&limit=10"
-curl "http://localhost:8000/events?city=Toronto&limit=10"
-```
-
-## Run with Docker
-
-Requirements: Docker and Git.
-
-```bash
-git clone <your-repo>
-cd watchagent-weather-monitor
-cp .env.example .env
-docker compose up --build
-```
-
-The API is available at `http://localhost:8000`. The poller starts automatically and SQLite data is stored in `./data/` on the host so it survives container restarts.
-
-### Environment variables
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `DATABASE_URL` | `sqlite:///./data/weather.db` | SQLite database path |
-| `POLL_INTERVAL_SECONDS` | `300` | Seconds between poll cycles |
-| `ENABLE_POLLER` | `true` | Start background poller on boot |
+First reading per city produces no events (nothing to compare).
 
 ## Local development (without Docker)
 
@@ -70,20 +124,49 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Run tests:
-
 ```bash
 pytest -q
 ```
 
-## Planned structure
+## Cursor setup (AI Assistant)
 
-- `app/` application code
-- `tests/` automated tests
-- `.cursor/` project-specific Cursor rules, agents, and skills
-- `Dockerfile` container image definition
-- `docker-compose.yml` local stack runner
-- `.env.example` documented environment variables
-- `requirements.txt` Python dependencies
+Project-specific Cursor configuration in `.cursor/`. Separate from the runtime API — used for development, review, and analyzing stored data in Cursor.
 
-This base structure is intentionally minimal so we can build the project step by step.
+### Rules (`.cursor/rules/`)
+
+| Rule | Scope | Purpose |
+|---|---|---|
+| `project-conventions.mdc` | Always | Architecture, dedup, UTC timestamps, test env |
+| `event-design.mdc` | `app/events.py`, event tests | Change-based rules, WMO categories |
+| `poller-resilience.mdc` | `app/poller.py`, poller tests | Fetch failures, loop survival, insert-only-on-new |
+
+### Agents (`.cursor/agents/`)
+
+| Agent | Use when |
+|---|---|
+| `event-reviewer` | Changing event detection or thresholds |
+| `api-storage-reviewer` | Changing models, repository, or API routes |
+
+### Skill: data analysis (`.cursor/skills/data_analysis/`)
+
+```bash
+python .cursor/skills/data_analysis/analyze.py summary
+python .cursor/skills/data_analysis/analyze.py events-by-type --city Ottawa
+python .cursor/skills/data_analysis/analyze.py recent-events --limit 5
+python .cursor/skills/data_analysis/analyze.py temperature-trend --city Toronto --limit 10
+```
+
+Uses `DATABASE_URL` (default `./data/weather.db`). Creates schema if needed; returns empty JSON counts on an empty DB. See `SKILL.md` in that folder.
+
+## Project structure
+
+```
+app/                FastAPI, poller, events, DB layer
+tests/              pytest (dedup, events, API, integration)
+docs/               Architecture, use case, class diagrams
+.cursor/            Rules, agents, data analysis skill
+Dockerfile          Container image
+docker-compose.yml  Local stack, volume-mounted SQLite
+.env.example        Environment variables
+requirements.txt    Dependencies
+```

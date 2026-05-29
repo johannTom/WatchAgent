@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-27
+# What this file does: connects to SQLite and gives FastAPI a db session per request.
+
 from collections.abc import Generator
 from pathlib import Path
 
@@ -24,9 +28,9 @@ engine_kwargs: dict = {}
 connect_args: dict = {}
 
 if DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False  # FastAPI runs sync routes in a thread pool
+    connect_args["check_same_thread"] = False
     if DATABASE_URL.endswith(":memory:"):
-        # Tests and API must share the same in-memory database
+        # tests need one shared in-memory db for TestClient + fixtures
         engine_kwargs["poolclass"] = StaticPool
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args, **engine_kwargs)

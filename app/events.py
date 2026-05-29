@@ -1,3 +1,7 @@
+# Name: Johan Tom Chacko
+# Date: 2026-05-28
+# What this file does: decides what's "notable" by comparing each new reading to the last one for that city.
+
 from sqlalchemy.orm import Session
 
 from app.db.models import Reading
@@ -14,6 +18,7 @@ WIND_THRESHOLDS_KMH = {
 
 
 def weather_category(code: int) -> str:
+    # Group WMO codes so small code jumps (e.g. 1 -> 3) don't spam events
     if code == 0:
         return "clear"
     if code in (1, 2, 3):
@@ -31,7 +36,7 @@ def weather_category(code: int) -> str:
 
 def detect_events(reading: Reading, previous: Reading | None) -> list[tuple[str, str, str]]:
     if previous is None:
-        return []
+        return []  # first reading for a city — nothing to compare yet
 
     events: list[tuple[str, str, str]] = []
 

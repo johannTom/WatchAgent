@@ -1,3 +1,43 @@
-# Project Conventions
+---
+description: WatchAgent architecture, cities, and storage conventions
+alwaysApply: true
+---
 
-This file is a placeholder for WatchAgent-specific Cursor rules.
+# WatchAgent project conventions
+
+WatchAgent polls Open-Meteo for **Ottawa, Toronto, Vancouver**, stores readings in SQLite, detects change-based notable events, and exposes `/health`, `/readings`, `/events`.
+
+## Architecture boundaries
+
+- **Poller** (`app/poller.py`) fetches and writes; it does not serve HTTP.
+- **Event detection** (`app/events.py`) compares a new reading to the previous reading **for the same city** only.
+- **Repository** (`app/db/repository.py`) owns SQL; routes in `app/main.py` stay thin.
+- **Client access** is HTTP-only. Never expose SQLite paths or query the DB from a frontend.
+
+## Dedup rule (Section 01)
+
+Store a reading only when `(city, observed_at)` is new. Use `store_reading_if_new()` — do not insert directly in the poller.
+
+```python
+# ✅ GOOD
+reading = store_reading_if_new(db, **weather)
+if reading is None:
+    return
+
+# ❌ BAD — bypasses dedup
+db.add(Reading(...))
+db.commit()
+```
+
+## Timestamps
+
+Open-Meteo returns local time without offset when `timezone=auto`. Convert to **UTC** before persistence (`app/poller.py::_to_utc`).
+
+## Tests
+
+- Set `ENABLE_POLLER=false` and `DATABASE_URL=sqlite:///:memory:` in tests.
+- Mock Open-Meteo in poller tests; never call the live forecast API from pytest.
+
+## Scope
+
+Prefer minimal diffs. Match existing naming and patterns. Do not add frameworks or layers the requirements do not ask for.

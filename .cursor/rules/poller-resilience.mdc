@@ -1,0 +1,45 @@
+---
+description: Poller fetch failures, loop survival, and logging contracts
+globs: app/poller.py,tests/test_poller.py
+alwaysApply: false
+---
+
+# Poller resilience
+
+The poller runs forever in a background task started from FastAPI lifespan. It must **never crash the app or exit the loop** because one city or one HTTP call failed.
+
+## HTTP fetch failures
+
+On `httpx.HTTPError`, log at **WARNING** with the city name and error message. Do **not** re-raise.
+
+```python
+# ✅ GOOD
+except httpx.HTTPError as exc:
+    logger.warning("Weather fetch failed for %s: %s", city_name, exc)
+
+# ❌ BAD — kills the poll cycle or loop
+except httpx.HTTPError:
+    raise
+```
+
+## Store / DB failures
+
+On unexpected errors during store or event evaluation, call `db.rollback()`, log with `logger.exception`, and continue to the next city. The outer `poller_loop` also catches cycle-level failures.
+
+## Open-Meteo request shape
+
+Always request: `current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,weather_code`, `wind_speed_unit=kmh`, `timezone=auto`. Timeout ≥ 30s.
+
+## After a successful insert
+
+Only call `evaluate_reading()` when `store_reading_if_new()` returns a new `Reading` (not on duplicate timestamps).
+
+## Logging levels
+
+| Situation | Level |
+|---|---|
+| New reading stored | INFO — city + ISO timestamp |
+| HTTP fetch failed | WARNING |
+| Unexpected poll/store error | ERROR via `logger.exception` |
+
+Do not log full Open-Meteo response bodies at INFO (noise).
