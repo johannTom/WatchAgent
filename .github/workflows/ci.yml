@@ -24,3 +24,11 @@ jobs:
         env:
           DATABASE_URL: "sqlite:///:memory:"
           ENABLE_POLLER: "false"
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t watchagent .

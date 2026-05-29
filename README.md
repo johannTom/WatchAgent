@@ -42,6 +42,40 @@ curl "http://localhost:8000/readings?city=Ottawa&limit=10"
 curl "http://localhost:8000/events?city=Toronto&limit=10"
 ```
 
+## Run with Docker
+
+Requirements: Docker and Git.
+
+```bash
+git clone <your-repo>
+cd watchagent-weather-monitor
+cp .env.example .env
+docker compose up --build
+```
+
+The API is available at `http://localhost:8000`. The poller starts automatically and SQLite data is stored in `./data/` on the host so it survives container restarts.
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `sqlite:///./data/weather.db` | SQLite database path |
+| `POLL_INTERVAL_SECONDS` | `300` | Seconds between poll cycles |
+| `ENABLE_POLLER` | `true` | Start background poller on boot |
+
+## Local development (without Docker)
+
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Run tests:
+
+```bash
+pytest -q
+```
+
 ## Planned structure
 
 - `app/` application code

@@ -1,1 +1,10 @@
-# Placeholder docker compose file to be completed during the delivery sprint.
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
