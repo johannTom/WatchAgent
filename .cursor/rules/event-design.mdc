@@ -36,11 +36,11 @@ Group codes before comparing: `clear`, `cloudy`, `fog`, `drizzle/rain`, `snow`, 
 3. Document the reasoning in README under Event detection.
 
 ```python
-# ❌ BAD — shallow, not change-based
+# Fires on absolute temperature; no comparison to previous reading
 if reading.temperature_2m > 30:
     ...
 
-# ✅ GOOD — compares to previous reading for same city
+# Fires when change since previous reading meets threshold
 if abs(reading.temperature_2m - previous.temperature_2m) >= TEMP_SHIFT_C:
     ...
 ```

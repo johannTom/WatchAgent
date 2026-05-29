@@ -19,12 +19,13 @@ WatchAgent polls Open-Meteo for **Ottawa, Toronto, Vancouver**, stores readings 
 Store a reading only when `(city, observed_at)` is new. Use `store_reading_if_new()` — do not insert directly in the poller.
 
 ```python
-# ✅ GOOD
+# Store only when (city, observed_at) is new
 reading = store_reading_if_new(db, **weather)
+# Nothing new for this city at this timestamp
 if reading is None:
     return
 
-# ❌ BAD — bypasses dedup
+# Inserts without dedup; can violate unique (city, observed_at)
 db.add(Reading(...))
 db.commit()
 ```

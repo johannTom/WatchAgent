@@ -13,11 +13,11 @@ The poller runs forever in a background task started from FastAPI lifespan. It m
 On `httpx.HTTPError`, log at **WARNING** with the city name and error message. Do **not** re-raise.
 
 ```python
-# ✅ GOOD
+# Log failed fetch; poller continues with remaining cities
 except httpx.HTTPError as exc:
     logger.warning("Weather fetch failed for %s: %s", city_name, exc)
 
-# ❌ BAD — kills the poll cycle or loop
+# Propagates error out of poll_city and can stop the poll cycle
 except httpx.HTTPError:
     raise
 ```
