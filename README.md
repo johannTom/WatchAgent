@@ -4,6 +4,8 @@ Nokia take-home — weather monitor backend plus Cursor AI Assistant setup.
 
 Polls Ottawa, Toronto, and Vancouver via Open-Meteo, stores readings in SQLite, detects notable events, and exposes `/health`, `/readings`, and `/events`. The `.cursor/` folder holds rules, agents, and a data-analysis skill for the AI Assistant section.
 
+**Systems Analysis and Design report:** [docs/system-analysis-and-design.md](docs/system-analysis-and-design.md) (SENG71000-style use cases, diagrams, technology stack)
+
 ## Overview
 
 Single FastAPI process with a background poller:
@@ -14,6 +16,26 @@ Single FastAPI process with a background poller:
 4. **Serve** — API reads from SQLite only; clients do not access the database directly
 
 No frontend required.
+
+### Monitored cities
+
+| City | Latitude | Longitude |
+|---|---|---|
+| Ottawa | 45.42 | -75.69 |
+| Toronto | 43.70 | -79.42 |
+| Vancouver | 49.25 | -123.12 |
+
+Polling runs every 300s (more frequently than Open-Meteo’s hourly updates). Duplicate `(city, observed_at)` pairs are skipped on insert.
+
+### Stored reading fields (Open-Meteo)
+
+Each poll stores these five current-condition fields per city:
+
+- `temperature_2m`
+- `apparent_temperature`
+- `precipitation`
+- `wind_speed_10m`
+- `weather_code`
 
 ## Architecture
 
@@ -33,7 +55,7 @@ The diagram has two zones:
 | **FastAPI** | `/health`, `/readings`, `/events`; poller on app lifespan |
 | **`.cursor/`** | Cursor rules, agents, data analysis skill |
 
-Also in `docs/`: [use-case-diagram.svg](docs/use-case-diagram.svg), [class-diagram.svg](docs/class-diagram.svg) (PlantUML sources: `.puml`).
+Also in `docs/`: [system-analysis-and-design.md](docs/system-analysis-and-design.md) (full SAD report), [use-case-diagram.svg](docs/use-case-diagram.svg), [class-diagram.svg](docs/class-diagram.svg), [sequence-diagram.svg](docs/sequence-diagram.svg).
 
 ## Technology choices
 
@@ -44,10 +66,17 @@ Also in `docs/`: [use-case-diagram.svg](docs/use-case-diagram.svg), [class-diagr
 | **SQLAlchemy 2** | ORM for readings/events |
 | **SQLite** | Single-file DB; Docker volume mount |
 | **httpx** | Open-Meteo HTTP client in poller |
-| **pytest** | 36 tests (dedup, events, API, integration) |
+| **pytest** | 56 tests (dedup, events, API, integration, system, analyze skill) |
 | **Docker Compose** | One-command run for reviewers |
 
-Open-Meteo: free, no credentials, provides temperature, precipitation, wind, and WMO weather code.
+Open-Meteo: free, no credentials; see [Stored reading fields](#stored-reading-fields-open-meteo) above.
+
+## CI
+
+GitHub Actions runs on every push to `main` (see `.github/workflows/ci.yml`):
+
+1. **test** — `pytest -q` with in-memory SQLite (`ENABLE_POLLER=false`)
+2. **build** — `docker build -t watchagent .`
 
 ## Run with Docker
 
@@ -83,6 +112,44 @@ API: `http://localhost:8000`. Poller starts automatically. SQLite persists in `.
 ```bash
 curl "http://localhost:8000/readings?city=Ottawa&limit=10"
 curl "http://localhost:8000/events?city=Toronto&limit=10"
+```
+
+### Example responses
+
+`GET /readings` returns:
+
+```json
+{
+  "readings": [
+    {
+      "id": 1,
+      "city": "Ottawa",
+      "observed_at": "2026-05-27T18:00:00+00:00",
+      "temperature_2m": 22.5,
+      "apparent_temperature": 21.0,
+      "precipitation": 0.0,
+      "wind_speed_10m": 12.0,
+      "weather_code": 2
+    }
+  ]
+}
+```
+
+`GET /events` returns:
+
+```json
+{
+  "events": [
+    {
+      "id": 1,
+      "city": "Toronto",
+      "observed_at": "2026-05-27T18:00:00+00:00",
+      "event_type": "temperature_shift",
+      "summary": "Temperature rose 3.2°C to 18.5°C",
+      "reason": "3.2°C change since last reading (threshold 3°C)"
+    }
+  ]
+}
 ```
 
 Interactive docs: `http://localhost:8000/docs`
@@ -163,7 +230,7 @@ Uses `DATABASE_URL` (default `./data/weather.db`). Creates schema if needed; ret
 ```
 app/                FastAPI, poller, events, DB layer
 tests/              pytest (dedup, events, API, integration)
-docs/               Architecture, use case, class diagrams
+docs/               SAD report, architecture, use case, class, sequence diagrams
 .cursor/            Rules, agents, data analysis skill
 Dockerfile          Container image
 docker-compose.yml  Local stack, volume-mounted SQLite

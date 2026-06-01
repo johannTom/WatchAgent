@@ -47,7 +47,7 @@
 
   <rect x="430" y="360" width="290" height="120" class="box process" />
   <text x="460" y="410" class="label">Event Detection Logic</text>
-  <text x="460" y="438" class="body">Evaluates weather changes and thresholds</text>
+  <text x="460" y="438" class="body">Change-based rules on consecutive readings</text>
   <text x="460" y="460" class="body">Decides whether an event is notable</text>
 
   <rect x="830" y="250" width="280" height="170" class="box storage" />

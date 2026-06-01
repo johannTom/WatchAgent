@@ -5,8 +5,8 @@
 from datetime import datetime, timezone
 
 from app.db.models import Reading
-from app.db.repository import count_events, store_reading_if_new
-from app.events import detect_events, evaluate_reading
+from app.db.repository import count_events, list_events, store_reading_if_new
+from app.events import detect_events, evaluate_reading, weather_category
 
 
 def _reading(**kwargs) -> Reading:
@@ -194,3 +194,48 @@ def test_vancouver_wind_threshold_is_lower_than_ottawa():
 
     assert any(event[0] == "strong_wind" for event in vancouver_events)
     assert ottawa_events == []
+
+
+def test_weather_category_groups_cloud_codes():
+    assert weather_category(1) == weather_category(3) == "cloudy"
+
+
+def test_weather_category_unknown_code_returns_other():
+    assert weather_category(999) == "other"
+
+
+def test_evaluate_reading_stored_event_has_required_fields(db):
+    previous_time = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)
+    current_time = datetime(2026, 5, 27, 12, 0, tzinfo=timezone.utc)
+
+    store_reading_if_new(
+        db,
+        city="Ottawa",
+        observed_at=previous_time,
+        temperature_2m=15.0,
+        apparent_temperature=14.0,
+        precipitation=0.0,
+        wind_speed_10m=10.0,
+        weather_code=3,
+    )
+    current = store_reading_if_new(
+        db,
+        city="Ottawa",
+        observed_at=current_time,
+        temperature_2m=19.0,
+        apparent_temperature=18.0,
+        precipitation=0.0,
+        wind_speed_10m=10.0,
+        weather_code=3,
+    )
+
+    evaluate_reading(db, current)
+
+    events = list_events(db, city="Ottawa")
+    assert len(events) == 1
+    event = events[0]
+    assert event.city == "Ottawa"
+    assert event.observed_at.replace(tzinfo=timezone.utc) == current_time
+    assert event.event_type
+    assert event.summary
+    assert event.reason

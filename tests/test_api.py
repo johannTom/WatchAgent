@@ -195,3 +195,60 @@ def test_events_order_newest_first(client, db):
         parse_observed_at(item["observed_at"]) for item in response.json()["events"]
     ]
     assert observed_times == [later, earlier]
+
+
+def test_readings_default_limit_is_fifty(client, db):
+    base = datetime(2026, 5, 27, 10, 0, tzinfo=timezone.utc)
+    for minute in range(60):
+        add_reading(
+            db,
+            city="Ottawa",
+            observed_at=base.replace(minute=minute),
+        )
+
+    response = client.get("/readings?city=Ottawa")
+
+    assert response.status_code == 200
+    assert len(response.json()["readings"]) == 50
+
+
+def test_events_default_limit_is_fifty(client, db):
+    base = datetime(2026, 5, 27, 10, 0, tzinfo=timezone.utc)
+    for minute in range(60):
+        add_event(
+            db,
+            city="Toronto",
+            observed_at=base.replace(minute=minute),
+        )
+
+    response = client.get("/events?city=Toronto")
+
+    assert response.status_code == 200
+    assert len(response.json()["events"]) == 50
+
+
+def test_readings_rejects_invalid_limit(client):
+    assert client.get("/readings?limit=0").status_code == 422
+    assert client.get("/readings?limit=501").status_code == 422
+
+
+def test_events_rejects_invalid_limit(client):
+    assert client.get("/events?limit=0").status_code == 422
+    assert client.get("/events?limit=501").status_code == 422
+
+
+def test_readings_accepts_max_limit(client, db):
+    from datetime import timedelta
+
+    base = datetime(2026, 5, 27, 10, 0, tzinfo=timezone.utc)
+    for index in range(510):
+        add_reading(
+            db,
+            city="Ottawa",
+            observed_at=base + timedelta(minutes=index),
+        )
+
+    response = client.get("/readings?city=Ottawa&limit=500")
+
+    assert response.status_code == 200
+    assert len(response.json()["readings"]) == 500

@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="920" viewBox="0 0 1250 920" role="img" aria-labelledby="title desc">
+  <title id="title">WatchAgent domain class diagram</title>
+  <desc id="desc">Domain class diagram with SAD-style aggregation diamonds and directed association arrows.</desc>
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e6e6e6" stroke-width="0.8"/>
+    </pattern>
+    <marker id="assoc-arrow" viewBox="0 0 10 10" markerWidth="8" markerHeight="8" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    </marker>
+    <style>
+      .bg { fill: #ffffff; }
+      .title { font: 700 22px Arial, sans-serif; fill: #000; }
+      .class-box { fill: #fff; stroke: #000; stroke-width: 1.5; }
+      .class-name { font: 700 14px Arial, sans-serif; fill: #000; }
+      .attr { font: 400 13px Arial, sans-serif; fill: #000; }
+      .divider { stroke: #000; stroke-width: 1.5; }
+      .agg { stroke: #000; stroke-width: 1.5; fill: none; }
+      .assoc { stroke: #000; stroke-width: 1.5; fill: none; marker-end: url(#assoc-arrow); }
+      .label { font: 400 12px Arial, sans-serif; fill: #000; }
+      .mult { font: 400 12px Arial, sans-serif; fill: #000; }
+    </style>
+  </defs>
+
+  <rect width="1250" height="920" fill="#ffffff"/>
+  <rect width="1250" height="920" fill="url(#grid)"/>
+  <text x="40" y="40" class="title">WatchAgent - Domain Class Diagram</text>
+
+  <!-- Aggregation lines under class boxes (no arrowheads) -->
+  <path d="M 465 480 L 465 525 L 195 525 L 195 560" class="agg" />
+  <path d="M 655 480 L 655 575 L 825 575 L 825 560" class="agg" />
+
+  <!-- Class boxes -->
+  <rect x="40" y="200" width="200" height="115" class="class-box" />
+  <text x="55" y="225" class="class-name">City</text>
+  <line x1="40" y1="235" x2="240" y2="235" class="divider" />
+  <text x="55" y="258" class="attr">+ name: String</text>
+  <text x="55" y="278" class="attr">+ latitude: float</text>
+  <text x="55" y="298" class="attr">+ longitude: float</text>
+
+  <rect x="500" y="55" width="220" height="90" class="class-box" />
+  <text x="515" y="80" class="class-name">OpenMeteoAPI</text>
+  <line x1="500" y1="90" x2="720" y2="90" class="divider" />
+  <text x="515" y="113" class="attr">+ baseUrl: String</text>
+
+  <rect x="480" y="195" width="240" height="90" class="class-box" />
+  <text x="495" y="220" class="class-name">WeatherPoller</text>
+  <line x1="480" y1="230" x2="720" y2="230" class="divider" />
+  <text x="495" y="253" class="attr">+ pollIntervalSeconds: int</text>
+
+  <rect x="950" y="195" width="240" height="130" class="class-box" />
+  <text x="965" y="220" class="class-name">EventDetector</text>
+  <line x1="950" y1="230" x2="1190" y2="230" class="divider" />
+  <text x="965" y="253" class="attr">+ tempShiftThreshold: float</text>
+  <text x="965" y="273" class="attr">+ precipStartThreshold: float</text>
+  <text x="965" y="293" class="attr">+ windThreshold: float</text>
+
+  <rect x="450" y="370" width="260" height="90" class="class-box" />
+  <text x="465" y="395" class="class-name">WeatherDatabase</text>
+  <line x1="450" y1="405" x2="710" y2="405" class="divider" />
+  <text x="465" y="428" class="attr">+ dbPath: String</text>
+  <text x="465" y="448" class="attr">+ connectionUrl: String</text>
+
+  <rect x="950" y="370" width="220" height="90" class="class-box" />
+  <text x="965" y="395" class="class-name">FastAPIService</text>
+  <line x1="950" y1="405" x2="1170" y2="405" class="divider" />
+  <text x="965" y="428" class="attr">+ defaultLimit: int</text>
+
+  <rect x="40" y="560" width="230" height="205" class="class-box" />
+  <text x="55" y="585" class="class-name">Reading</text>
+  <line x1="40" y1="595" x2="270" y2="595" class="divider" />
+  <text x="55" y="618" class="attr">+ id: int</text>
+  <text x="55" y="638" class="attr">+ city: String</text>
+  <text x="55" y="658" class="attr">+ observedAt: DateTime</text>
+  <text x="55" y="678" class="attr">+ temperature2m: float</text>
+  <text x="55" y="698" class="attr">+ apparentTemperature: float</text>
+  <text x="55" y="718" class="attr">+ precipitation: float</text>
+  <text x="55" y="738" class="attr">+ windSpeed10m: float</text>
+  <text x="55" y="758" class="attr">+ weatherCode: int</text>
+
+  <rect x="690" y="560" width="270" height="165" class="class-box" />
+  <text x="705" y="585" class="class-name">Event</text>
+  <line x1="690" y1="595" x2="960" y2="595" class="divider" />
+  <text x="705" y="618" class="attr">+ id: int</text>
+  <text x="705" y="638" class="attr">+ city: String</text>
+  <text x="705" y="658" class="attr">+ observedAt: DateTime</text>
+  <text x="705" y="678" class="attr">+ eventType: String</text>
+  <text x="705" y="698" class="attr">+ summary: String</text>
+  <text x="705" y="718" class="attr">+ reason: String</text>
+
+  <polygon points="465,460 477,470 465,480 453,470" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <polygon points="655,460 667,470 655,480 643,470" fill="#fff" stroke="#000" stroke-width="1.5" />
+
+  <!-- Directed associations on top of boxes so arrowheads stay visible -->
+  <path d="M 600 195 L 600 145" class="assoc" />
+  <path d="M 480 245 L 240 245" class="assoc" />
+  <path d="M 720 240 L 950 240" class="assoc" />
+  <path d="M 600 285 L 600 370" class="assoc" />
+  <path d="M 950 415 L 710 415" class="assoc" />
+  <path d="M 1070 325 L 1070 520 L 960 520 L 960 560" class="assoc" />
+
+  <!-- Reading to City: straight vertical under City center -->
+  <path d="M 140 560 L 140 315" class="assoc" />
+
+  <!-- Event to City: enters City right edge, avoids Reading column -->
+  <path d="M 690 642 L 1010 642 L 1010 800 L 270 800 L 270 258 L 240 258" class="assoc" />
+
+  <!-- Labels and multiplicities -->
+  <text x="608" y="175" class="label">fetches from</text>
+  <text x="582" y="190" class="mult">1</text>
+  <text x="582" y="150" class="mult">1</text>
+
+  <text x="320" y="233" class="label">monitors</text>
+  <text x="465" y="240" class="mult">1</text>
+  <text x="252" y="240" class="mult">3</text>
+
+  <text x="800" y="228" class="label">triggers</text>
+  <text x="730" y="235" class="mult">1</text>
+  <text x="938" y="235" class="mult">1</text>
+
+  <text x="608" y="332" class="label">persists readings</text>
+  <text x="582" y="295" class="mult">1</text>
+  <text x="582" y="365" class="mult">1</text>
+
+  <text x="790" y="403" class="label">queries</text>
+  <text x="935" y="410" class="mult">1</text>
+  <text x="722" y="410" class="mult">1</text>
+
+  <text x="1078" y="420" class="label">generates</text>
+  <text x="1052" y="332" class="mult">1</text>
+  <text x="968" y="555" class="mult">0..*</text>
+
+  <text x="152" y="440" class="label">recorded for</text>
+  <text x="148" y="548" class="mult">*</text>
+  <text x="148" y="328" class="mult">1</text>
+
+  <text x="698" y="635" class="mult">*</text>
+  <text x="248" y="252" class="mult">1</text>
+
+  <text x="300" y="518" class="label">stores</text>
+  <text x="443" y="492" class="mult">1</text>
+  <text x="203" y="555" class="mult">*</text>
+
+  <text x="700" y="568" class="label">stores</text>
+  <text x="633" y="492" class="mult">1</text>
+  <text x="831" y="555" class="mult">*</text>
+  <text x="278" y="780" class="label">occurred in</text>
+</svg>

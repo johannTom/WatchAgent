@@ -1,0 +1,47 @@
+@startuml watchagent-sequence-diagram
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+title WatchAgent - Poll and Event Detection Sequence
+
+actor "Weather Poller" as Poller
+participant "Open-Meteo API" as OM
+participant "Repository" as Repo
+database "SQLite\n(WeatherDatabase)" as DB
+participant "Event Detector" as ED
+
+loop For each city (Ottawa, Toronto, Vancouver)
+  Poller -> OM : GET current weather
+  OM --> Poller : JSON (5 fields + timestamp)
+
+  Poller -> Repo : store_reading_if_new(...)
+  Repo -> DB : SELECT existing (city, observed_at)
+
+  alt Duplicate timestamp
+    DB --> Repo : row exists
+    Repo --> Poller : None (skip)
+  else New reading
+    DB --> Repo : not found
+    Repo -> DB : INSERT Reading
+    DB --> Repo : committed
+    Repo --> Poller : Reading
+
+    Poller -> ED : evaluate_reading(db, reading)
+    ED -> Repo : get_previous_reading(city)
+    Repo -> DB : SELECT prior reading
+    DB --> Repo : previous Reading
+    Repo --> ED : previous Reading
+
+    ED -> ED : detect_events(reading, previous)
+
+    loop For each detected event
+      ED -> Repo : store_event(...)
+      Repo -> DB : INSERT Event
+    end
+
+    ED --> Poller : done
+  end
+end
+
+@enduml

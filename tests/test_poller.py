@@ -9,17 +9,21 @@ from unittest.mock import MagicMock, patch
 import httpx
 
 from app import poller
-from app.db.repository import count_readings
+from app.db.repository import count_events, count_readings
 from app.poller import _to_utc, poll_all_cities, poll_city
 
 
-def _api_payload(time_value: str = "2026-05-27T12:00") -> dict:
+def _api_payload(
+    time_value: str = "2026-05-27T12:00",
+    *,
+    temperature: float = 18.0,
+) -> dict:
     return {
         "timezone": "America/Toronto",
         "current": {
             "time": time_value,
-            "temperature_2m": 18.0,
-            "apparent_temperature": 17.0,
+            "temperature_2m": temperature,
+            "apparent_temperature": temperature - 1.0,
             "precipitation": 0.0,
             "wind_speed_10m": 12.0,
             "weather_code": 3,
@@ -62,6 +66,31 @@ def test_poll_city_handles_http_error(db):
     poll_city(db, client, "Ottawa", 45.42, -75.69)
 
     assert count_readings(db) == 0
+
+
+def test_poll_city_creates_event_after_temperature_shift(db):
+    client = MagicMock()
+    client.get.side_effect = [
+        _mock_response(_api_payload("2026-05-27T11:00", temperature=15.0)),
+        _mock_response(_api_payload("2026-05-27T12:00", temperature=19.0)),
+    ]
+
+    poll_city(db, client, "Ottawa", 45.42, -75.69)
+    poll_city(db, client, "Ottawa", 45.42, -75.69)
+
+    assert count_readings(db) == 2
+    assert count_events(db) == 1
+
+
+def test_poll_city_skips_event_detection_on_duplicate(db):
+    client = MagicMock()
+    client.get.return_value = _mock_response(_api_payload())
+
+    poll_city(db, client, "Ottawa", 45.42, -75.69)
+    poll_city(db, client, "Ottawa", 45.42, -75.69)
+
+    assert count_readings(db) == 1
+    assert count_events(db) == 0
 
 
 def test_poll_all_cities_stores_one_reading_per_city(db):

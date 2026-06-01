@@ -1,0 +1,77 @@
+@startuml watchagent-domain-class-diagram
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+  BackgroundColor white
+  BorderColor black
+  ArrowColor black
+  FontName Arial
+}
+
+title WatchAgent - Domain Class Diagram
+
+class City {
+  + name: String
+  + latitude: float
+  + longitude: float
+}
+
+class Reading {
+  + id: int
+  + city: String
+  + observedAt: DateTime
+  + temperature2m: float
+  + apparentTemperature: float
+  + precipitation: float
+  + windSpeed10m: float
+  + weatherCode: int
+}
+
+class Event {
+  + id: int
+  + city: String
+  + observedAt: DateTime
+  + eventType: String
+  + summary: String
+  + reason: String
+}
+
+class WeatherDatabase {
+  + dbPath: String
+  + connectionUrl: String
+}
+
+class WeatherPoller {
+  + pollIntervalSeconds: int
+}
+
+class EventDetector {
+  + tempShiftThreshold: float
+  + precipStartThreshold: float
+  + windThreshold: float
+}
+
+class OpenMeteoAPI {
+  + baseUrl: String
+}
+
+class FastAPIService {
+  + defaultLimit: int
+}
+
+WeatherDatabase "1" o-- "*" Reading : stores
+WeatherDatabase "1" o-- "*" Event : stores
+
+WeatherPoller "1" --> "3" City : monitors
+WeatherPoller "1" --> "1" OpenMeteoAPI : fetches from
+WeatherPoller "1" --> "1" WeatherDatabase : persists readings
+WeatherPoller "1" --> "1" EventDetector : triggers
+
+EventDetector "1" --> "0..*" Event : generates
+
+Reading "*" --> "1" City : recorded for
+Event "*" --> "1" City : occurred in
+
+FastAPIService "1" --> "1" WeatherDatabase : queries
+
+@enduml
